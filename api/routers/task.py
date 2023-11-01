@@ -1,19 +1,25 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+import api.cruds.task as task_crud
+from api.db import get_db
+import api.schemas.task as task_schema
 
 router = APIRouter()
 
-import api.schemas.task as task_schema
 
 @router.get("/tasks", response_model=List[task_schema.Task])
 async def list_tasks():
     return [task_schema.Task(id=1, title="1つ目のTODOタスク")]
 
-
 @router.post("/tasks", response_model=task_schema.TaskCreateResponse)
 #引数にリクエストボディ
-async def create_task(task_body: task_schema.TaskCreate):
+async def create_task(
+    task_body: task_schema.TaskCreate, db: AsyncSession = Depends(get_db)
+):
 # dict に変換し、これらのkey/valueおよび id=1 を持つ task_schema.TaskCreateResponse インスタンスを作成
-    return task_schema.TaskCreateResponse(id=1, **task_body.dict())
+    return await task_crud.create_task(db, task_body)
 
 
 # putはtaskにすでにidを持つため　task_id: intを追加
